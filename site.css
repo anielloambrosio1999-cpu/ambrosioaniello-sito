@@ -168,8 +168,8 @@ html.no-anim .m-run{left:72%}
 .tile-logo.gj{width:clamp(200px,22vw,300px);margin:8px 0 6px}
 .tile-logo.zp{width:clamp(120px,12vw,170px);margin:4px 0 2px}
 /* Zeppo page speaks with the Zeppo brand fonts (Commit Mono shouts, Apfel Grotezk talks) */
-@font-face{font-family:"Commit Mono";src:url(https://cdn.jsdelivr.net/gh/anielloambrosio1999-cpu/ambrosioaniello-sito@v1/media/commitmono-700.woff2) format("woff2");font-weight:700;font-display:swap}
-@font-face{font-family:"Apfel Grotezk";src:url(https://cdn.jsdelivr.net/gh/anielloambrosio1999-cpu/ambrosioaniello-sito@v1/media/apfel-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Commit Mono";src:url(https://cdn.jsdelivr.net/gh/anielloambrosio1999-cpu/ambrosioaniello-sito@29fc89c4010c95d6e570419443029299fcaa612d/media/commitmono-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Apfel Grotezk";src:url(https://cdn.jsdelivr.net/gh/anielloambrosio1999-cpu/ambrosioaniello-sito@29fc89c4010c95d6e570419443029299fcaa612d/media/apfel-400.woff2) format("woff2");font-weight:400;font-display:swap}
 [data-view="zeppo"]{font-family:"Apfel Grotezk",var(--text)}
 [data-view="zeppo"] .head h2,[data-view="zeppo"] .timeline b,[data-view="zeppo"] .co-open .q{font-family:"Commit Mono",ui-monospace,monospace;font-weight:700;text-transform:uppercase;letter-spacing:-.01em}
 [data-view="zeppo"] .head h2{font-size:clamp(28px,3.6vw,46px);line-height:1.1}
