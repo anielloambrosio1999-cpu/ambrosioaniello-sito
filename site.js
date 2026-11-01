@@ -184,14 +184,35 @@
   if (!ckChoice) ck.hidden = false;
   $$('[data-ck]').forEach(b => b.addEventListener('click', () => { try { localStorage.setItem('aa-cookie', b.dataset.ck); } catch (_) {} ck.hidden = true; }));
 
-  /* ---------- prototype forms: nothing is sent or stored ---------- */
+  /* ---------- forms: in the prototype nothing is sent; on the real site they go through the hidden Webflow form "Contatti sito" ---------- */
+  const note = (box, cls, it, en) => { const p = document.createElement('p'); p.className = cls; p.setAttribute('role','status'); p.textContent = T(it, en); return p; };
   $$('[data-form]').forEach(box => {
     const f = $('form', box);
     f.addEventListener('submit', e => {
       e.preventDefault();
-      const p = document.createElement('p'); p.className = 'ok'; p.setAttribute('role','status');
-      p.textContent = T('Fatto. Nel prototipo non viene inviato niente: nel sito vero la richiesta arriva al team giusto.', 'Done. In the prototype nothing is sent: on the real site the request reaches the right team.');
-      box.replaceChildren(p);
+      const nat = document.querySelector('[data-aa-native] form');
+      if (!(LIVE && nat && window.jQuery)) {
+        box.replaceChildren(note(box, 'ok', 'Fatto. Nel prototipo non viene inviato niente: nel sito vero la richiesta arriva al team giusto.', 'Done. In the prototype nothing is sent: on the real site the request reaches the right team.'));
+        return;
+      }
+      const wrap = nat.closest('[data-aa-native]'), done = wrap.querySelector('.w-form-done'), fail = wrap.querySelector('.w-form-fail');
+      const put = (k, v) => { const el = nat.querySelector('#aa-' + k); if (el) el.value = v || ''; };
+      ['tipo','nome','email','negozio','citta','contatto','preferenza','showroom','lingua','consenso','sezione'].forEach(k => put(k, ''));
+      const vals = $$('input:not([type=checkbox]), select', f).map(el => el.value.trim());
+      (box.dataset.keys || '').split(',').forEach((k, i) => put(k, vals[i]));
+      put('tipo', box.dataset.tipo); put('lingua', lang.toUpperCase()); put('sezione', (location.hash || '#home').slice(1));
+      put('consenso', 'Sì, ' + new Date().toLocaleString('it-IT'));
+      nat.style.display = ''; done.style.display = 'none'; fail.style.display = 'none';
+      const btn = $('[type=submit]', f); if (btn) btn.disabled = true;
+      jQuery(nat).trigger('submit');
+      let n = 0;
+      const poll = setInterval(() => {
+        const ok = getComputedStyle(done).display !== 'none' && done.style.display === 'block', ko = fail.style.display === 'block';
+        if (!ok && !ko && ++n < 80) return;
+        clearInterval(poll); if (btn) btn.disabled = false;
+        if (ok) box.replaceChildren(note(box, 'ok', 'Fatto, ricevuto. Ti rispondiamo presto.', 'Done, received. We will get back to you soon.'));
+        else { const old = $('.ko', box); if (old) old.remove(); f.appendChild(note(box, 'ko', 'Non è partito. Riprova tra un attimo.', 'It did not go through. Please try again in a moment.')); }
+      }, 250);
     });
   });
 

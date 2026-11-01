@@ -235,6 +235,8 @@ html.no-anim .m-run{left:72%}
 .cal-done p{margin:0;color:#6E6E73}
 .cal-note{margin:auto 0 0;font-size:12px;color:#8E8E93;text-align:center}
 .cal-live{height:min(700px,78svh);margin:0 -10px -6px}
+[data-aa-native]{display:none!important}
+.ko{margin:10px 0 0;font-size:14px;color:#C0392B}
 .cal-live iframe{border:0}
 @media (max-width:700px){.cal{padding:18px 16px 14px}.cal-days{grid-template-columns:repeat(3,1fr)}.cal-fields{grid-template-columns:1fr}}
 .btns .tb[aria-pressed="true"]{outline:2px solid currentColor;outline-offset:3px}
