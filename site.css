@@ -210,6 +210,7 @@ html.no-anim .m-run{left:72%}
 .cal-dur{display:flex;background:#F0F0F2;border-radius:999px;padding:3px}
 .cal-dur button{border:0;background:none;font:500 14px var(--text);padding:8px 16px;border-radius:999px;color:#111;cursor:pointer;min-height:36px}
 .cal-dur button[aria-checked="true"]{background:#111;color:#fff}
+.cal-dur span{font:500 14px var(--text);padding:8px 16px;border-radius:999px;background:#111;color:#fff}
 .cal-x{border:0;background:#F0F0F2;width:36px;height:36px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer;color:#111}
 .cal-step{display:flex;flex-direction:column;gap:10px}
 .cal-lbl{margin:6px 0 0;font-size:14px;font-weight:600}

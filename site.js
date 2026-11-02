@@ -131,7 +131,7 @@
 
   /* ---------- book a call: the calendar opens in place of the photos (prototype stand-in for Calendly) ---------- */
   const calBox = $('#cal'), collage = $('#work .collage');
-  const cal = { motive: null, min: 15, day: null, time: null };
+  const cal = { motive: null, min: 30, day: null, time: null };
   const SLOTS = ['10:00','11:00','12:00','15:00','16:00','17:00','18:00'];
   const calDays = () => { const out = []; const d = new Date(); d.setHours(12,0,0,0); while (out.length < 6) { d.setDate(d.getDate() + 1); const w = d.getDay(); if (w && w < 6) out.push(new Date(d)); } return out; };
   const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
@@ -226,7 +226,7 @@ FATTI:
 - Founder di AmbrosioAniello.com: racconto come si costruiscono aziende da dentro, con il lavoro, i numeri e gli errori. Video su Instagram, YouTube, TikTok e LinkedIn; ogni lunedì il riassunto della settimana via mail.
 - Storia: a 16 anni sognavo di fare l'imprenditore. A 17 i primi investimenti: ho perso tutto. Economia all'Università Cattolica. Un brand di abbigliamento, City Hall Supply, che ho messo in pausa. Sei mesi in un fondo di M&A a Milano (2024).
 - I miei pilastri: lavoro duro, tentare l'impossibile, imparare in prima persona, corpo e mente (allenamento, Hyrox, alimentazione, lettura).
-- Lavorare insieme: oggi faccio consulenza solo alle mie due aziende, più avanti aprirò qualche posto. Intanto si può prenotare una videochiamata di 15 o 30 minuti (mai di più): "Parliamo di lavoro" oppure "Raccontami qualcosa".
+- Lavorare insieme: oggi faccio consulenza solo alle mie due aziende, più avanti aprirò qualche posto. Intanto si può prenotare una videochiamata di 30 minuti (mai di più): "Parliamo di lavoro" oppure "Raccontami qualcosa".
 - Firma: Remember why you started.
 
 ALLA FINE della risposta, su una riga a parte, scrivi esattamente una di queste etichette, la più utile per chi chiede: [PORTA:seguimi] [PORTA:gj] [PORTA:zeppo] [PORTA:lavoriamo] [PORTA:nessuna]`;
@@ -241,8 +241,9 @@ ALLA FINE della risposta, su una riga a parte, scrivi esattamente una di queste 
     who: [['Sono Aniello, di Napoli. A 17 anni ho fatto i primi investimenti e ho perso tutto. Da allora ci riprovo: oggi lavoro in Giorgia & Johns, ho fondato Zeppo con i miei soci e racconto tutto qui.', 'I\'m Aniello, from Naples. At 17 I made my first investments and lost everything. I\'ve kept trying ever since: today I work at Giorgia & Johns, I co-founded Zeppo with my partners and I share it all here.'], 'seguimi'],
     gj: [['È l\'azienda di moda donna della mia famiglia: 17 negozi, un e-commerce e una rete vendita B2B, online e negli showroom. Da febbraio 2026 ne guido la trasformazione digitale. Se hai un negozio, nella pagina G&J trovi come diventare rivenditore.', 'It\'s my family\'s womenswear company: 17 stores, an e-commerce and a B2B sales network, online and in showrooms. Since February 2026 I\'ve been leading its digital transformation. If you have a store, the G&J page shows you how to become a retailer.'], 'gj'],
     zeppo: [['Una pasticceria senza glutine e senza lattosio, per bar, ristoranti, hotel e per casa. L\'abbiamo fondata ad aprile 2026, a ottobre abbiamo firmato il laboratorio e apriamo nel 2027. Di sapore, non di glutine.', 'A gluten-free and lactose-free pastry brand for bars, restaurants, hotels and homes. We founded it in April 2026, signed the lab in October and open in 2027. Full of flavour, free of gluten.'], 'zeppo'],
-    work: [['Oggi faccio consulenza solo alle mie due aziende, più avanti aprirò qualche posto. Intanto prenota una call da 15 o 30 minuti: puoi scegliere se parlare di lavoro o semplicemente raccontarmi qualcosa.', 'Today I only consult for my two companies; later on I\'ll open a few spots. Meanwhile, book a 15 or 30 minute call: you can choose to talk business or simply tell me something.'], 'lavoriamo']
+    work: [['Oggi faccio consulenza solo alle mie due aziende, più avanti aprirò qualche posto. Intanto prenota una call di 30 minuti: puoi scegliere se parlare di lavoro o semplicemente raccontarmi qualcosa.', 'Today I only consult for my two companies; later on I\'ll open a few spots. Meanwhile, book a 30-minute call: you can choose to talk business or simply tell me something.'], 'lavoriamo']
   };
+  const CHAT_URL = 'https://chiedimi.aniello-ambrosio-1999.workers.dev'; // Worker Cloudflare "chiedimi"
   let samplePromise = null;
   const getSample = () => samplePromise ||= (window.claude && claude.use ? claude.use('sample').catch(() => null) : Promise.resolve(null));
   const splitDoor = t => { const m = t.match(/\[PORTA:(\w+)\]/); return [t.replace(/\s*\[PORTA:\w+\]\s*/g, '').trim(), m ? m[1] : 'nessuna']; };
@@ -264,6 +265,20 @@ ALLA FINE della risposta, su una riga a parte, scrivi esattamente una di queste 
     turns.push({role:'user', content:q});
     const finish = (t, door) => { out.classList.remove('wait'); out.textContent = t; addDoor(out, door); turns.push({role:'assistant', content:t}); };
     const fb = key && FALLBACK[key];
+    if (LIVE && CHAT_URL) {
+      try {
+        const r = await fetch(CHAT_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({lang, messages: turns.slice(-8)})});
+        if (!r.ok || !r.body) throw {code: r.status === 429 ? 'rate_limited' : 'http_' + r.status};
+        const rd = r.body.getReader(), dec = new TextDecoder(); let acc = '';
+        for (;;) { const {value, done} = await rd.read(); if (done) break; acc += dec.decode(value, {stream:true}); out.classList.remove('wait'); out.textContent = splitDoor(acc)[0]; }
+        if (!acc.trim()) throw {code:'empty'};
+        const [clean, door] = splitDoor(acc); finish(clean, door);
+      } catch (e) {
+        if (fb) finish(T(fb[0][0], fb[0][1]), fb[1]);
+        else { out.classList.remove('wait'); out.textContent = e && e.code === 'rate_limited' ? T('Troppe domande tutte insieme. Riprova tra un minuto.', 'Too many questions at once. Try again in a minute.') : T('Qualcosa non è andato. Riprova tra poco.', 'Something went wrong. Try again shortly.'); }
+      } finally { busy = false; btn.disabled = false; }
+      return;
+    }
     const sample = await getSample();
     if (!sample) {
       if (fb) finish(T(fb[0][0], fb[0][1]), fb[1]);
