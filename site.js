@@ -25,23 +25,69 @@
     $$('[data-en-aria]').forEach(el => { if (el.dataset.itAria === undefined) el.dataset.itAria = el.getAttribute('aria-label'); el.setAttribute('aria-label', lang === 'en' ? el.dataset.enAria : el.dataset.itAria); });
     if (calReady) renderCal();
     const b = $('#lang'); b.textContent = lang === 'en' ? 'IT' : 'EN'; b.setAttribute('aria-label', lang === 'en' ? 'Leggi in italiano' : 'Read in English');
-    document.title = T('AmbrosioAniello.com, prototipo v10', 'AmbrosioAniello.com, prototype v10');
+    document.title = T(...TITLES[view]);
+    fixLinks();
     splitWords();
     try { localStorage.setItem('aa-lang', lang); } catch (_) {}
   }
   $('#lang').addEventListener('click', () => { lang = lang === 'en' ? 'it' : 'en'; applyLang(); requestAnimationFrame(onScroll); });
 
-  /* ---------- router ---------- */
+  /* ---------- router ----------
+     Prototype: one page, views in the hash (#gj, #zeppo, #privacy).
+     Real site: each view has its own address, given by window.AA_ROUTES in the Webflow code,
+     e.g. {home:'/', gj:'/giorgia-e-johns', zeppo:'/zeppo', privacy:'/privacy'}. Old "#gj" links still work. */
   const views = ['home','gj','zeppo','privacy'];
+  const R = window.AA_ROUTES || null;
+  const clean = p => (p || '/').replace(/\/+$/, '') || '/';
+  const TITLES = {
+    home: ['Aniello Ambrosio — Aziende vere. Numeri veri. Errori veri.', 'Aniello Ambrosio — Real companies. Real numbers. Real mistakes.'],
+    gj: ['Giorgia & Johns — Aniello Ambrosio', 'Giorgia & Johns — Aniello Ambrosio'],
+    zeppo: ['Zeppo, pasticceria senza glutine — Aniello Ambrosio', 'Zeppo, gluten-free pastry — Aniello Ambrosio'],
+    privacy: ['Privacy e cookie — Aniello Ambrosio', 'Privacy and cookies — Aniello Ambrosio']
+  };
+  let view = 'home';
+  const urlFor = (v, anchor) => R ? (R[v] || R.home) + (anchor ? '#' + anchor : '') : '#' + (anchor || v);
+  // a "#..." link means a view (#gj), a section inside a view (#gj-b2b) or a section of a view (#work)
+  function parseHash(h){
+    h = (h || '').replace(/^#/, '');
+    if (!h) return null;
+    const v = h.split('-')[0];
+    if (views.includes(v)) return {v, anchor: h.includes('-') ? h : ''};
+    const el = document.getElementById(h), host = el && el.closest('.view');
+    return {v: host ? host.dataset.view : null, anchor: el ? h : ''};
+  }
+  function current(){
+    const p = parseHash(location.hash);
+    if (!R) return {v: (p && p.v) || 'home', anchor: p ? p.anchor : ''};
+    const path = clean(location.pathname);
+    let v = views.find(k => R[k] && clean(R[k]) === path) || 'home';
+    if (p && p.v && p.v !== v) { v = p.v; history.replaceState(null, '', urlFor(v, p.anchor)); }
+    return {v, anchor: p ? p.anchor : ''};
+  }
   function show(){
-    const h = (location.hash || '#home').slice(1);
-    let v = h.split('-')[0];
-    if (!views.includes(v)) v = 'home';
-    $$('.view').forEach(el => el.hidden = el.dataset.view !== v);
-    $$('.nav .links a').forEach(a => { if (a.dataset.v === v) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
-    const target = h.includes('-') && document.getElementById(h);
+    const c = current(); view = c.v;
+    $$('.view').forEach(el => el.hidden = el.dataset.view !== view);
+    $$('.nav .links a').forEach(a => { if (a.dataset.v === view) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
+    document.title = T(...TITLES[view]);
+    const target = c.anchor && document.getElementById(c.anchor);
     if (target) requestAnimationFrame(() => target.scrollIntoView({block:'start'})); else window.scrollTo(0, 0);
     requestAnimationFrame(onScroll);
+  }
+  function fixLinks(){
+    if (!R) return;
+    $$('a[href^="#"]').forEach(a => { const p = parseHash(a.getAttribute('href')); if (p && p.v) a.setAttribute('href', urlFor(p.v, p.anchor)); });
+  }
+  if (R) {
+    document.addEventListener('click', e => {
+      const a = e.target.closest && e.target.closest('a[href]');
+      if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target === '_blank') return;
+      const u = new URL(a.href, location.href);
+      if (u.origin !== location.origin || !views.some(k => R[k] && clean(R[k]) === clean(u.pathname))) return;
+      e.preventDefault();
+      if (u.pathname + u.hash !== location.pathname + location.hash) history.pushState(null, '', u.pathname + u.hash);
+      show();
+    });
+    addEventListener('popstate', show);
   }
   addEventListener('hashchange', show);
 
@@ -200,7 +246,7 @@
       ['tipo','nome','email','negozio','citta','contatto','preferenza','showroom','lingua','consenso','sezione'].forEach(k => put(k, ''));
       const vals = $$('input:not([type=checkbox]), select', f).map(el => el.value.trim());
       (box.dataset.keys || '').split(',').forEach((k, i) => put(k, vals[i]));
-      put('tipo', box.dataset.tipo); put('lingua', lang.toUpperCase()); put('sezione', (location.hash || '#home').slice(1));
+      put('tipo', box.dataset.tipo); put('lingua', lang.toUpperCase()); put('sezione', view);
       put('consenso', 'Sì, ' + new Date().toLocaleString('it-IT'));
       nat.style.display = ''; done.style.display = 'none'; fail.style.display = 'none';
       const btn = $('[type=submit]', f); if (btn) btn.disabled = true;
