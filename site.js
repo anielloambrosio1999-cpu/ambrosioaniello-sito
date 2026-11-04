@@ -35,15 +35,17 @@
   /* ---------- router ----------
      Prototype: one page, views in the hash (#gj, #zeppo, #privacy).
      Real site: each view has its own address, given by window.AA_ROUTES in the Webflow code,
-     e.g. {home:'/', gj:'/giorgia-e-johns', zeppo:'/zeppo', privacy:'/privacy'}. Old "#gj" links still work. */
-  const views = ['home','gj','zeppo','privacy'];
+     e.g. {home:'/', gj:'/giorgia-e-johns', zeppo:'/zeppo', privacy:'/privacy'}. Old "#gj" links still work.
+     The Webflow 404 page also sets window.AA_VIEW = 'nf'. */
+  const views = ['home','gj','zeppo','privacy','nf'];
   const R = window.AA_ROUTES || null;
   const clean = p => (p || '/').replace(/\/+$/, '') || '/';
   const TITLES = {
     home: ['Aniello Ambrosio — Aziende vere. Numeri veri. Errori veri.', 'Aniello Ambrosio — Real companies. Real numbers. Real mistakes.'],
     gj: ['Giorgia & Johns — Aniello Ambrosio', 'Giorgia & Johns — Aniello Ambrosio'],
     zeppo: ['Zeppo, pasticceria senza glutine — Aniello Ambrosio', 'Zeppo, gluten-free pastry — Aniello Ambrosio'],
-    privacy: ['Privacy e cookie — Aniello Ambrosio', 'Privacy and cookies — Aniello Ambrosio']
+    privacy: ['Privacy e cookie — Aniello Ambrosio', 'Privacy and cookies — Aniello Ambrosio'],
+    nf: ['Pagina non trovata — Aniello Ambrosio', 'Page not found — Aniello Ambrosio']
   };
   let view = 'home';
   const urlFor = (v, anchor) => R ? (R[v] || R.home) + (anchor ? '#' + anchor : '') : '#' + (anchor || v);
@@ -60,7 +62,8 @@
     const p = parseHash(location.hash);
     if (!R) return {v: (p && p.v) || 'home', anchor: p ? p.anchor : ''};
     const path = clean(location.pathname);
-    let v = views.find(k => R[k] && clean(R[k]) === path) || 'home';
+    // the 404 page sets window.AA_VIEW = 'nf': any address that is not one of ours shows it
+    let v = views.find(k => R[k] && clean(R[k]) === path) || window.AA_VIEW || 'home';
     if (p && p.v && p.v !== v) { v = p.v; history.replaceState(null, '', urlFor(v, p.anchor)); }
     return {v, anchor: p ? p.anchor : ''};
   }

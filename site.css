@@ -334,3 +334,14 @@ html.no-anim .m-run{left:72%}
   .foot .row{gap:0 14px}
   .foot .row a{font-size:13px}
 }
+
+/* 404: same opening as the home, one line and three ways out */
+.nf{justify-content:center;gap:clamp(18px,3svh,28px)}
+.nf .nf-tag{margin:0;font:600 13px var(--text);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.nf h1{margin:0;font-size:min(16vw,170px);white-space:nowrap}
+.nf h1 span{display:block;overflow:hidden;padding-bottom:.04em}
+.nf h1 span i{display:block;font-style:normal;animation:rise 1s cubic-bezier(.2,.75,.2,1) both}
+.nf .lead{margin:0;font-size:clamp(17px,1.5vw,20px);color:var(--muted);max-width:38ch}
+.nf .btns{max-width:720px;margin-top:6px}
+.nf .tb{width:auto;min-width:180px}
+@media (max-width:600px){.nf .btns{flex-direction:column;align-items:stretch;max-width:340px}.nf .tb{width:100%}}
