@@ -203,7 +203,7 @@
     renderCal();
   }
   /* On the real site (Webflow) the box holds the Calendly calendar instead of the stand-in. */
-  const LIVE = /(^|\.)ambrosioaniello\.com$|\.webflow\.io$/.test(location.hostname);
+  const LIVE = /(^|\.)ambrosioaniello\.com$|\.webflow\.io$|\.pages\.dev$/.test(location.hostname);
   const CAL_URL = 'https://calendly.com/aniello-ambrosio-1999/30min';
   function liveCal(motive){
     ['#cal-s1','#cal-s2','#cal-s3'].forEach(id => $(id).hidden = true);
@@ -251,7 +251,21 @@
     const f = $('form', box);
     f.addEventListener('submit', e => {
       e.preventDefault();
-      if (box.dataset.brevo) { const em = $('input[type=email]', f); if (em && em.value.trim()) toBrevo(box.dataset.brevo, em.value.trim()); }
+      const em = box.dataset.brevo && $('input[type=email]', f);
+      const pB = em && em.value.trim() ? toBrevo(box.dataset.brevo, em.value.trim()) : null;
+      // static site (Cloudflare): requests go to the "contatti" Worker, which emails them to Aniello
+      if (LIVE && window.AA_FORM_URL) {
+        const btn = $('[type=submit]', f); if (btn) btn.disabled = true;
+        const ko = () => { if (btn) btn.disabled = false; const old = $('.ko', box); if (old) old.remove(); f.appendChild(note(box, 'ko', 'Non è partito. Riprova tra un attimo.', 'It did not go through. Please try again in a moment.')); };
+        if (pB) { pB.then(() => box.replaceChildren(note(box, 'ok', ...OK_BREVO))); return; }
+        const d = {tipo: box.dataset.tipo, lingua: lang.toUpperCase(), sezione: view, consenso: 'Sì, ' + new Date().toLocaleString('it-IT')};
+        const vals = $$('input:not([type=checkbox]), select', f).map(el => el.value.trim());
+        (box.dataset.keys || '').split(',').forEach((k, i) => { if (k) d[k] = vals[i] || ''; });
+        fetch(window.AA_FORM_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(d)})
+          .then(r => r.ok ? box.replaceChildren(note(box, 'ok', 'Fatto, ricevuto. Ti rispondiamo presto.', 'Done, received. We will get back to you soon.')) : ko())
+          .catch(ko);
+        return;
+      }
       const nat = document.querySelector('[data-aa-native] form');
       if (!(LIVE && nat && window.jQuery)) {
         box.replaceChildren(note(box, 'ok', 'Fatto. Nel prototipo non viene inviato niente: nel sito vero la richiesta arriva al team giusto.', 'Done. In the prototype nothing is sent: on the real site the request reaches the right team.'));
