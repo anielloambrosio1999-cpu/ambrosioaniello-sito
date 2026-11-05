@@ -2,6 +2,7 @@
 // Cloudflare Worker: riceve le richieste dei moduli del sito (G&J rivenditore, Zeppo locale, Zeppo privato)
 // e le manda per mail ad Aniello. Sostituisce il modulo nascosto di Webflow.
 // Binding richiesto: SEND_EMAIL (Email Service, send_email) con destinazione verificata in Email Routing.
+import { EmailMessage } from 'cloudflare:email';
 
 const ALLOWED = [
   'https://ambrosioaniello.com',
@@ -52,8 +53,8 @@ export default {
     try {
       await env.SEND_EMAIL.send({ from: { email: FROM, name: 'Sito Aniello Ambrosio' }, to: TO, subject, text });
     } catch (e) {
+      console.error('send (object) failed', String(e));
       try {
-        const { EmailMessage } = await import('cloudflare:email');
         const raw = [
           `From: Sito Aniello Ambrosio <${FROM}>`, `To: ${TO}`, `Subject: =?UTF-8?B?${b64(subject)}?=`,
           `Message-ID: <${crypto.randomUUID()}@ambrosioaniello.com>`, `Date: ${new Date().toUTCString()}`,
@@ -61,6 +62,7 @@ export default {
         ].join('\r\n');
         await env.SEND_EMAIL.send(new EmailMessage(FROM, TO, raw));
       } catch (e2) {
+        console.error('send (raw) failed', String(e2));
         return json({ error: 'send_failed' }, 502, cors);
       }
     }
