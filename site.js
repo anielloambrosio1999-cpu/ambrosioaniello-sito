@@ -2,7 +2,8 @@
 (function(){
   const $ = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* animations always on: many office PCs have Windows animations switched off, which would freeze the site */
+  const reduce = false;
   document.documentElement.classList.add(reduce ? 'no-anim' : 'anim');
   const LAUNCH = new Date('2027-01-31T00:00:00+01:00');
   const toLaunch = () => Math.max(0, Math.ceil((LAUNCH - Date.now()) / 864e5));
