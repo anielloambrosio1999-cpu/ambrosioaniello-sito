@@ -236,10 +236,22 @@
 
   /* ---------- forms: in the prototype nothing is sent; on the real site they go through the hidden Webflow form "Contatti sito" ---------- */
   const note = (box, cls, it, en) => { const p = document.createElement('p'); p.className = cls; p.setAttribute('role','status'); p.textContent = T(it, en); return p; };
+  // newsletter: Brevo sends the double opt-in email; the confirmation link brings people back with ?iscritto=1
+  const OK_BREVO = ['Quasi fatto: ti ho mandato una mail. Clicca il link dentro per confermare.', 'Almost done: I sent you an email. Click the link inside to confirm.'];
+  const toBrevo = (url, email) => {
+    const d = new FormData(); d.append('EMAIL', email); d.append('email_address_check', ''); d.append('locale', 'it');
+    return fetch(url, {method:'POST', mode:'no-cors', body:d}).catch(() => {});
+  };
+  if (/[?&]iscritto=1\b/.test(location.search)) {
+    const nl = $('[data-brevo]');
+    if (nl) nl.replaceChildren(note(nl, 'ok', 'Iscrizione confermata. Tra poco ti arriva la prima mail.', 'Subscription confirmed. Your first email is on its way.'));
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (_) {}
+  }
   $$('[data-form]').forEach(box => {
     const f = $('form', box);
     f.addEventListener('submit', e => {
       e.preventDefault();
+      if (box.dataset.brevo) { const em = $('input[type=email]', f); if (em && em.value.trim()) toBrevo(box.dataset.brevo, em.value.trim()); }
       const nat = document.querySelector('[data-aa-native] form');
       if (!(LIVE && nat && window.jQuery)) {
         box.replaceChildren(note(box, 'ok', 'Fatto. Nel prototipo non viene inviato niente: nel sito vero la richiesta arriva al team giusto.', 'Done. In the prototype nothing is sent: on the real site the request reaches the right team.'));
@@ -260,7 +272,7 @@
         const ok = getComputedStyle(done).display !== 'none' && done.style.display === 'block', ko = fail.style.display === 'block';
         if (!ok && !ko && ++n < 80) return;
         clearInterval(poll); if (btn) btn.disabled = false;
-        if (ok) box.replaceChildren(note(box, 'ok', 'Fatto, ricevuto. Ti rispondiamo presto.', 'Done, received. We will get back to you soon.'));
+        if (ok) box.replaceChildren(box.dataset.brevo ? note(box, 'ok', ...OK_BREVO) : note(box, 'ok', 'Fatto, ricevuto. Ti rispondiamo presto.', 'Done, received. We will get back to you soon.'));
         else { const old = $('.ko', box); if (old) old.remove(); f.appendChild(note(box, 'ko', 'Non è partito. Riprova tra un attimo.', 'It did not go through. Please try again in a moment.')); }
       }, 250);
     });
